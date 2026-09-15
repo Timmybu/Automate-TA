@@ -3,10 +3,67 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="refresh" content="0; url=dist/index.html">
+  <meta name="description" content="Plan, validate, and re-run teaching-assistant assignments without rebuilding the schedule by hand.">
   <title>Automate TA — Assignment Studio</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
+  <link rel="stylesheet" href="./assets/styles.css">
 </head>
 <body>
-  <p>Opening <a href="dist/index.html">Automate TA Assignment Studio</a>…</p>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><div class="brand-mark">TA</div><div><strong>Automate TA</strong><span>Assignment Studio</span></div></div>
+      <p class="nav-label">Workspace</p>
+      <nav class="nav" aria-label="Primary navigation">
+        <button class="active" data-view="overview"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Overview</button>
+        <button data-view="courses"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 3v4M16 3v4M4 10h16"/></svg>Courses <span class="count">8</span></button>
+        <button data-view="tas"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Teaching assistants <span class="count">12</span></button>
+        <button data-view="assignments"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Assignments <span class="count">1</span></button>
+      </nav>
+      <p class="nav-label" style="margin-top:23px">Model</p>
+      <nav class="nav" aria-label="Model navigation">
+        <button data-view="constraints"><svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Constraints</button>
+      </nav>
+      <div class="term-card"><small>Active planning term</small><strong>Spring 2027</strong><p>Draft · last run Sep 15, 2026</p></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:10px"><button class="btn mobile-menu" id="menuBtn" aria-label="Open navigation"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="page-title"><h1 id="viewTitle">Assignment overview</h1><p id="viewSubtitle">Spring 2027 planning workspace</p></div></div>
+        <div class="top-actions"><button class="btn" id="exportBtn"><svg viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4M4 21h16"/></svg>Export CSV</button><button class="btn primary" id="runBtn"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg>Run assignment</button></div>
+      </header>
+
+      <div class="content">
+        <section class="view active" id="overview">
+          <div class="intro"><div><h2>A strong draft, with two choices left</h2><p>The current run covers every section except one lab. Review the two flagged constraints, then export or re-run the proposal.</p></div><span class="status-chip" id="runStatus">Run #04 complete</span></div>
+          <div class="metrics">
+            <article class="metric featured"><div class="ring"></div><div><small>Coverage</small><strong>13 of 14</strong><p>sections fully staffed</p></div></article>
+            <article class="metric"><small>Preference fit</small><strong>87%</strong><span class="delta">+6%</span><p>Average weighted match</p></article>
+            <article class="metric"><small>Assigned hours</small><strong>186</strong><p>of 200 available per week</p></article>
+            <article class="metric"><small>Schedule changes</small><strong id="changeMetric">3</strong><p>from the previous accepted plan</p></article>
+          </div>
+          <div class="grid">
+            <article class="card">
+              <div class="card-head"><div><h3>Assignment proposal</h3><p>Highest-impact sections first</p></div><button class="text-link" data-go="assignments">View all 14 sections →</button></div>
+              <div class="matrix-wrap"><table class="matrix"><thead><tr><th>Course / section</th><th>Enrollment</th><th>Assigned TAs</th><th>Match</th><th>Status</th></tr></thead><tbody id="proposalBody"></tbody></table></div>
+            </article>
+            <div class="side-stack">
+              <article class="card"><div class="card-head"><div><h3>Needs attention</h3><p>2 decisions before publishing</p></div></div><div class="conflicts"><div class="conflict"><div class="conflict-icon red"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.8L2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0z"/></svg></div><div><strong>CS 0445 Lab 03 is unstaffed</strong><p>It needs 10 hours. Two available TAs have a partial time conflict.</p></div><button class="resolveBtn">Resolve</button></div><div class="conflict"><div class="conflict-icon"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"/></svg></div><div><strong>Maya exceeds preferred hours</strong><p>Assigned 18 hours against a preferred maximum of 15.</p></div><button data-go="assignments">Review</button></div></div></article>
+              <article class="card"><div class="card-head"><div><h3>Objective score</h3><p>How this run balances priorities</p></div></div><div class="objective"><div class="objective-row"><span>Overall optimization score</span><strong>87 / 100</strong></div><div class="progress"><i></i></div><div class="weights"><div class="weight"><span>Preference fit</span><strong>45%</strong></div><div class="weight"><span>Coverage</span><strong>35%</strong></div><div class="weight"><span>Stability</span><strong>20%</strong></div></div></div></article>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="courses"><div class="intro"><div><h2>Courses and staffing demand</h2><p>Lecture, recitation, and laboratory sections with enrollment-driven staffing needs.</p></div><span class="status-chip">14 sections · 200 hours</span></div><div class="toolbar"><label class="search"><span class="sr-only">Search courses</span><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="courseSearch" placeholder="Search by course or instructor"></label><button class="btn" id="addCourse">+ Add course</button></div><article class="card data-card"><table class="data-table"><thead><tr><th>Course</th><th>Type</th><th>Enrollment</th><th>Hours needed</th><th>Priority</th></tr></thead><tbody id="courseBody"></tbody></table></article></section>
+
+        <section class="view" id="tas"><div class="intro"><div><h2>Teaching assistant pool</h2><p>Availability, relevant experience, and human-written preferences prepared for matching.</p></div><span class="status-chip">12 available · 200 hours</span></div><div class="toolbar"><label class="search"><span class="sr-only">Search teaching assistants</span><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="taSearch" placeholder="Search by name or skill"></label><button class="btn" id="addTA">+ Add TA</button></div><article class="card data-card"><table class="data-table"><thead><tr><th>Teaching assistant</th><th>Available</th><th>Preferred courses</th><th>Constraints</th><th>Readiness</th></tr></thead><tbody id="taBody"></tbody></table></article></section>
+
+        <section class="view" id="assignments"><div class="intro"><div><h2>Full assignment plan</h2><p>Compare match quality, hours, and stability before accepting the run.</p></div><span class="status-chip">Draft run #04</span></div><div class="diff-banner" id="diffBanner"><div><strong>Replan complete.</strong> One assignment changed; 12 accepted placements stayed fixed.</div><button class="text-link" id="dismissDiff">Dismiss</button></div><article class="card data-card"><table class="data-table"><thead><tr><th>Course / section</th><th>Teaching assistant</th><th>Hours</th><th>Preference match</th><th>Change from last plan</th></tr></thead><tbody id="assignmentBody"></tbody></table></article></section>
+
+        <section class="view" id="constraints"><div class="intro"><div><h2>Model constraints</h2><p>Set hard limits and tune the priorities used to rank otherwise valid assignments.</p></div><span class="status-chip">All rules valid</span></div><div class="settings-layout"><article class="card settings-card"><h3>Assignment rules</h3><p>These values feed the next optimization run.</p><div class="setting"><div class="setting-head"><label for="studentsRange">Maximum students per TA</label><output id="studentsOut">30</output></div><input id="studentsRange" type="range" min="15" max="50" value="30"><small>Used to calculate the minimum staffing level for each section.</small></div><div class="setting"><div class="setting-head"><label for="hoursRange">Maximum hours per TA</label><output id="hoursOut">20</output></div><input id="hoursRange" type="range" min="10" max="25" value="20"><small>A hard weekly cap; individual availability can still be lower.</small></div><div class="setting"><div class="setting-head"><label for="stabilityRange">Stability weight</label><output id="stabilityOut">20%</output></div><input id="stabilityRange" type="range" min="0" max="50" value="20"><small>Higher values avoid moving TAs whose existing placements still work.</small></div><div class="toggle-row"><div><strong>Respect stated course exclusions</strong><p>Treat “cannot teach” preferences as hard constraints.</p></div><button class="switch on" id="exclusionSwitch" role="switch" aria-checked="true"><span class="sr-only">Respect exclusions</span></button></div><div class="toggle-row"><div><strong>Allow split assignments</strong><p>Let a TA work across two courses when hours permit.</p></div><button class="switch on" id="splitSwitch" role="switch" aria-checked="true"><span class="sr-only">Allow split assignments</span></button></div></article><aside class="change-card"><small>Robustness test</small><h3>What if a TA becomes unavailable?</h3><p>Remove one person from the pool and re-run the model while protecting placements that still satisfy every rule.</p><button class="btn" id="simulateBtn">Simulate a late withdrawal</button><div class="change-result" id="changeResult"><strong>Jordan Lee removed</strong><br>1 placement changed · 12 placements preserved · coverage remains 93%</div></aside></div></section>
+      </div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"><div class="toast-icon">✓</div><div><strong id="toastTitle">Assignment complete</strong><p id="toastText">The proposal has been updated.</p></div></div>
+  <script src="./assets/app.js"></script>
 </body>
 </html>

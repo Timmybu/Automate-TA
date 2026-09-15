@@ -6,7 +6,15 @@ A self-contained frontend prototype for the CS 1980 Automate TA capstone.
 
 Double-click `index.html`. It opens the application directly from the repository; no server, account, installation, build step, or cloud service is required.
 
-The complete interface, sample data, styling, and interactions live in `dist/index.html`. The only supporting asset is `dist/favicon.svg`.
+## Project structure
+
+```text
+index.html            Application markup and entry point
+assets/
+  styles.css          Layout, visual design, and responsive rules
+  app.js              Sample data, rendering, and interactions
+  favicon.svg         Local application icon
+```
 
 ## Included flows
 
