@@ -22,7 +22,7 @@
 <body>
   <header class="topbar">
     <div class="brand"><span class="mark">TA</span><span>Automate TA</span></div>
-    <p>CS 1980 Capstone · status: end of Week 2</p>
+    <p>CS 1980 Capstone · status: end of Week 3</p>
   </header>
 
   <main class="portfolio">
@@ -55,7 +55,7 @@
     <section class="row">
       <header class="row-label evolution-label"><b>04</b><div class="row-title"><strong>Project evolution</strong><span class="info" tabindex="0" aria-label="About the project evolution section">i<span class="tooltip" role="tooltip">Preserve each week’s plan, evidence, blocker, decision, next step, artifact, and architecture impact.</span></span></div></header>
       <div class="evolution-content">
-        <div class="evolution-head"><h2>12-week decision trail</h2><p>Weeks 1–2 recorded. Later weeks fill in at the end of each sprint.</p></div>
+        <div class="evolution-head"><h2>12-week decision trail</h2><p>Weeks 1–3 recorded. Later weeks fill in at the end of each sprint.</p></div>
         <div class="timeline" id="timeline" role="tablist" aria-label="Twelve-week project evolution"></div>
         <article class="week-pane" id="week-panel" role="tabpanel" aria-live="polite">
           <div class="week-story"><div class="week-kicker" id="week-kicker"></div><h3 id="week-title"></h3><p class="week-summary" id="week-summary"></p><div class="artifact"><span>WEEKLY ARTIFACT</span><strong id="week-artifact"></strong></div></div>
@@ -72,9 +72,9 @@
     const TBD='Not recorded yet.';
     const pending=(w,p,s)=>({w,p,s,pend:true,t:'Not recorded yet',sum:'This sprint has not happened. Fill in the plan, evidence, blocker, decision, next step, and artifact at the end of the week.',plan:TBD,ev:TBD,sig:TBD,dec:TBD,next:TBD,art:'—'});
     const weeks=[
-      {w:1,p:'Frame',s:'frame',t:'Find a problem with a real owner',sum:'Choose a capstone problem that someone already does by hand every term.',plan:'Form the team and pick a project with a stakeholder who feels the pain now.',ev:'TA section assignment surfaced as recurring manual work owned by one coordinator.',sig:'We had no written account of how assignments are made today.',dec:'Commit to automating TA assignment with Luis as the client.',next:'Meet the client and define the inputs, the scoring, and what “best” means.',art:'Project selection + team charter'},
-      {w:2,p:'Frame',s:'frame',t:'Let the client define “best”',sum:'A first client meeting turns “assign TAs faster” into a scored, re-runnable assignment.',plan:'Meet Luis, walk the current manual process end to end, and agree on an MVP.',ev:'Client confirmed he assigns sections by hand and that an application form already collects applicant answers.',sig:'The scoring factors beyond the form answers are still undecided, so we cannot fix the score yet.',dec:'Scope the MVP to an initial assignment run plus re-runs that only disturb the assignments with issues.',next:'Get a real form export and a section list, then draft the scoring factors with the client.',art:'Client meeting notes + MVP scope v1'},
-      {w:3,p:'Frame',s:'frame',t:'Not recorded yet',sum:'This sprint has not happened. Fill in the evidence, blocker, decision, and artifact at the end of the week.',plan:'Collect a real form export and section list, then draft the scoring factors with the client.',ev:TBD,sig:TBD,dec:TBD,next:TBD,art:'—',pend:true},
+      {w:1,p:'Frame',s:'frame',t:'Find a problem with a real owner',sum:'Choose a capstone problem that someone already does by hand every term.',plan:'Form the team and pick a project with a stakeholder who feels the pain now.',ev:'TA section assignment surfaced as recurring manual work owned by one coordinator.',sig:'We had no written account of how assignments are made today.',dec:'Commit to automating TA assignment with a client.',next:'Meet the client and define the inputs, the scoring, and what “best” means.',art:'Project selection + team charter'},
+      {w:2,p:'Frame',s:'frame',t:'Let the client define “best”',sum:'A first client meeting turns “assign TAs faster” into a scored, re-runnable assignment.',plan:'Meet Client, walk the current manual process end to end, and agree on an MVP.',ev:'Client confirmed he assigns sections by hand and that an application form already collects applicant answers.',sig:'The scoring factors beyond the form answers are still undecided, so we cannot fix the score yet.',dec:'Scope the MVP to an initial assignment run plus re-runs that only disturb the assignments with issues.',next:'Get a real form export and a section list, then draft the scoring factors with the client.',art:'Client meeting notes + MVP scope v1'},
+      {w:3,p:'Frame',s:'frame',t:'Break the score into pieces we can build',sum:'Scoring becomes one score per applicant-section pair, split into hard constraints that disqualify and soft signals that only sway the ranking.',plan:'Segment the scoring inputs by workload and start with the easiest one, stated preference against topic competence.',ev:'Every submission pairs with every course, so the model needs a score for each pair; Client confirmed topic strength only comes up when a course is nobody’s first choice.',sig:'No blocker, but Client weighs things the form never asks, such as already knowing an applicant, so a score will never fully reproduce his picks.',dec:'Stand up a prototype application to host the system, and segment the scoring inputs by workload before writing any scoring code.',next:'Build the preference against competence score, then hand Client small sets of roughly five applicants and five courses to verify.',art:'Prototype application shell'},
       pending(4,'Build','build'),
       pending(5,'Build','build'),
       pending(6,'Build','build'),
@@ -86,7 +86,7 @@
       pending(12,'Prove','prove')
     ];
     const architecture={
-      1:{input:'Form responses + section list',core:'Score, then assign',output:'Assignment list for the client',note:'Week 2 sketch, nothing built yet: score each applicant against each section, assign, and feed the previous run back in so a re-run only moves what is broken.'},
+      1:{input:'Form responses + section list',core:'Score, then assign',output:'Assignment list for the client',note:'Sketched in Week 2 and unchanged since: score each applicant against each section, assign, and feed the previous run back in so a re-run only moves what is broken. Week 3 adds a prototype shell for the experience layer; the core is still unbuilt.'},
       2:{input:'—',core:'—',output:'—',note:'No snapshot yet. Record one when the system boundary changes.'},
       3:{input:'—',core:'—',output:'—',note:'No snapshot yet. Record one when the system boundary changes.'},
       4:{input:'—',core:'—',output:'—',note:'No snapshot yet. Record one when the system boundary changes.'}
@@ -103,7 +103,7 @@
       fields.forEach((field,index)=>document.getElementById(field).textContent=values[index]);
       document.getElementById('arch-version').textContent='v'+version;document.getElementById('arch-input').textContent=arch.input;document.getElementById('arch-core').textContent=arch.core;document.getElementById('arch-output').textContent=arch.output;document.getElementById('arch-note').textContent=arch.note;
     }
-    selectWeek(2);
+    selectWeek(3);
   </script>
 </body>
 </html>
