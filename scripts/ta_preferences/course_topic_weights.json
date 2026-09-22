@@ -1,0 +1,59 @@
+{
+  "CS 0007": {
+    "Introductory programming (could be Python or Java)": 3,
+    "Core programming in Java": 2,
+    "Programming practice and software engineering": 1
+  },
+  "CS 0011/0012": {
+    "Introductory programming (could be Python or Java)": 3,
+    "Core programming in Java": 2,
+    "Programming practice and software engineering": 1
+  },
+  "CMPINF 0401": {
+    "Introductory programming (could be Python or Java)": 3,
+    "Core programming in Java": 3,
+    "Programming practice and software engineering": 1
+  },
+  "CS 0441": {
+    "Computer systems/architecture": 1,
+    "Theory and mathematical foundations": 3
+  },
+  "CS 0445": {
+    "Introductory programming (could be Python or Java)": 1,
+    "Core programming in Java": 3,
+    "Computer systems/architecture": 1,
+    "Theory and mathematical foundations": 2,
+    "Programming practice and software engineering": 2,
+    "Data management and organization": 2
+  },
+  "CS 0447": {
+    "Computer systems/architecture": 3,
+    "Theory and mathematical foundations": 1
+  },
+  "CS 0449": {
+    "Computer systems/architecture": 3,
+    "Programming practice and software engineering": 3
+  },
+  "CS 1501": {
+    "Core programming in Java": 1,
+    "Theory and mathematical foundations": 3,
+    "Programming practice and software engineering": 3,
+    "Security and networks": 1,
+    "Data management and organization": 2
+  },
+  "CS 1502": {
+    "Theory and mathematical foundations": 3
+  },
+  "CS 1503": {
+    "Theory and mathematical foundations": 2,
+    "Artificial intelligence and machine learning": 3
+  },
+  "CS 0590": {
+    "Programming practice and software engineering": 1,
+    "Security and networks": 1
+  },
+  "CS 1510/2012": {
+    "Theory and mathematical foundations": 3,
+    "Programming practice and software engineering": 1
+  }
+}

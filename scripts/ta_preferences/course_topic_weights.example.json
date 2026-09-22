@@ -1,0 +1,13 @@
+{
+  "CS 0445": {
+    "Introductory programming (could be Python or Java)": 1,
+    "Core programming in Java": 3,
+    "Theory and mathematical foundations": 1,
+    "Programming practice and software engineering": 2
+  },
+  "CS 1675/2075": {
+    "Theory and mathematical foundations": 2,
+    "Artificial intelligence and machine learning": 3,
+    "Data management and organization": 1
+  }
+}

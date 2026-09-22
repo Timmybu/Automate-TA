@@ -21,6 +21,7 @@
       </nav>
       <p class="nav-label" style="margin-top:23px">Model</p>
       <nav class="nav" aria-label="Model navigation">
+        <button data-view="scoring-test"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-5 9a3 3 0 0 0 2.6 4h8.8a3 3 0 0 0 2.6-4l-5-9V3M7 15h10"/></svg>Scoring test <span class="count">Beta</span></button>
         <button data-view="constraints"><svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Constraints</button>
       </nav>
       <div class="term-card"><small>Active planning term</small><strong>Spring 2027</strong><p>Draft · last run Sep 15, 2026</p></div>
@@ -58,6 +59,36 @@
         <section class="view" id="tas"><div class="intro"><div><h2>Teaching assistant pool</h2><p>Availability, relevant experience, and human-written preferences prepared for matching.</p></div><span class="status-chip">12 available · 200 hours</span></div><div class="toolbar"><label class="search"><span class="sr-only">Search teaching assistants</span><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="taSearch" placeholder="Search by name or skill"></label><button class="btn" id="addTA">+ Add TA</button></div><article class="card data-card"><table class="data-table"><thead><tr><th>Teaching assistant</th><th>Available</th><th>Preferred courses</th><th>Constraints</th><th>Readiness</th></tr></thead><tbody id="taBody"></tbody></table></article></section>
 
         <section class="view" id="assignments"><div class="intro"><div><h2>Full assignment plan</h2><p>Compare match quality, hours, and stability before accepting the run.</p></div><span class="status-chip">Draft run #04</span></div><div class="diff-banner" id="diffBanner"><div><strong>Replan complete.</strong> One assignment changed; 12 accepted placements stayed fixed.</div><button class="text-link" id="dismissDiff">Dismiss</button></div><article class="card data-card"><table class="data-table"><thead><tr><th>Course / section</th><th>Teaching assistant</th><th>Hours</th><th>Preference match</th><th>Change from last plan</th></tr></thead><tbody id="assignmentBody"></tbody></table></article></section>
+
+        <section class="view" id="scoring-test">
+          <div class="intro"><div><h2>Preference scoring test</h2><p>Run the real Python extraction and scoring pipeline as often as needed while tuning the model.</p></div><span class="status-chip" id="testRunStatus">Ready to run</span></div>
+          <div class="test-layout">
+            <article class="card test-controls">
+              <div class="card-head"><div><h3>Run configuration</h3><p>Topic and stated-preference weights must total 100%.</p></div></div>
+              <div class="source-list"><div><span>Survey workbook</span><code id="testWorkbook">data/Test_Info.xlsx</code></div><div><span>Course map</span><code id="testCourseMap">scripts/ta_preferences/course_topic_weights.json</code></div></div>
+              <label class="report-picker" for="testPeopleSoftReport"><span>PeopleSoft test report</span><select id="testPeopleSoftReport" disabled><option>No usable report found</option></select><small id="testPeopleSoftNote">Checking the local reports folder…</small></label>
+              <div class="weight-inputs">
+                <label>Topic fit <span><output id="testTopicOut">60</output>%</span><input id="testTopicWeight" type="range" min="0" max="100" value="60"></label>
+                <label>Course preference <span><output id="testPreferenceOut">40</output>%</span><input id="testPreferenceWeight" type="range" min="0" max="100" value="40"></label>
+              </div>
+              <button class="btn primary test-run-button" id="testRunBtn"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg>Run scoring test</button>
+              <p class="test-error" id="testError" role="alert"></p>
+            </article>
+            <article class="card test-summary">
+              <div class="card-head"><div><h3>Latest run</h3><p id="testTimestamp">No run completed yet</p></div></div>
+              <div class="test-metrics"><div><small>Profiles</small><strong id="testProfiles">—</strong></div><div><small>Mapped courses</small><strong id="testCourses">—</strong></div><div><small>Rankings</small><strong id="testRankings">—</strong></div></div>
+              <div class="test-output-note"><span>Output</span><code id="testOutput">outputs/ta-course-rankings.json</code></div>
+            </article>
+          </div>
+          <article class="card data-card test-results">
+            <div class="test-results-head"><div><h3>Candidate rankings</h3><p id="testResultCaption">Run the test to load candidates.</p></div><label for="testCourseSelect">Course<select id="testCourseSelect" disabled><option>Select a course</option></select></label></div>
+            <div class="matrix-wrap"><table class="data-table"><thead><tr><th>Rank</th><th>Candidate</th><th>Overall score</th><th>Topic fit</th><th>Stated preference</th><th>Status</th></tr></thead><tbody id="testRankingBody"><tr><td colspan="6" class="empty">No scoring run yet.</td></tr></tbody></table></div>
+          </article>
+          <article class="card data-card test-results test-sections">
+            <div class="test-results-head"><div><h3>PeopleSoft sections</h3><p id="testSectionCaption">Select a generated PeopleSoft workbook to connect sections to the rankings.</p></div></div>
+            <div class="matrix-wrap"><table class="data-table"><thead><tr><th>Course</th><th>Class</th><th>Type</th><th>Enrollment</th><th>TA need</th><th>Top candidate</th><th>Score</th></tr></thead><tbody id="testSectionBody"><tr><td colspan="7" class="empty">No PeopleSoft report loaded.</td></tr></tbody></table></div>
+          </article>
+        </section>
 
         <section class="view" id="constraints"><div class="intro"><div><h2>Model constraints</h2><p>Set hard limits and tune the priorities used to rank otherwise valid assignments.</p></div><span class="status-chip">All rules valid</span></div><div class="settings-layout"><article class="card settings-card"><h3>Assignment rules</h3><p>These values feed the next optimization run.</p><div class="setting"><div class="setting-head"><label for="studentsRange">Maximum students per TA</label><output id="studentsOut">30</output></div><input id="studentsRange" type="range" min="15" max="50" value="30"><small>Used to calculate the minimum staffing level for each section.</small></div><div class="setting"><div class="setting-head"><label for="hoursRange">Maximum hours per TA</label><output id="hoursOut">20</output></div><input id="hoursRange" type="range" min="10" max="25" value="20"><small>A hard weekly cap; individual availability can still be lower.</small></div><div class="setting"><div class="setting-head"><label for="stabilityRange">Stability weight</label><output id="stabilityOut">20%</output></div><input id="stabilityRange" type="range" min="0" max="50" value="20"><small>Higher values avoid moving TAs whose existing placements still work.</small></div><div class="toggle-row"><div><strong>Respect stated course exclusions</strong><p>Treat “cannot teach” preferences as hard constraints.</p></div><button class="switch on" id="exclusionSwitch" role="switch" aria-checked="true"><span class="sr-only">Respect exclusions</span></button></div><div class="toggle-row"><div><strong>Allow split assignments</strong><p>Let a TA work across two courses when hours permit.</p></div><button class="switch on" id="splitSwitch" role="switch" aria-checked="true"><span class="sr-only">Allow split assignments</span></button></div></article><aside class="change-card"><small>Robustness test</small><h3>What if a TA becomes unavailable?</h3><p>Remove one person from the pool and re-run the model while protecting placements that still satisfy every rule.</p><button class="btn" id="simulateBtn">Simulate a late withdrawal</button><div class="change-result" id="changeResult"><strong>Jordan Lee removed</strong><br>1 placement changed · 12 placements preserved · coverage remains 93%</div></aside></div></section>
       </div>
