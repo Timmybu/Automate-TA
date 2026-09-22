@@ -31,8 +31,8 @@ function renderTAs(query=''){const list=tas.filter(t=>(t.name+t.skills).toLowerC
 function renderAssignments(){document.getElementById('assignmentBody').innerHTML=assignments.map(a=>`<tr><td><strong>${a[0]}</strong></td><td>${a[1]}</td><td>${a[2]} hrs/week</td><td><span class="pill ${parseInt(a[3])>85?'good':'warn'}">${a[3]}</span></td><td>${a[4]}</td></tr>`).join('')}
 renderProposal();renderCourses();renderTAs();renderAssignments();
 // View navigation
-const titles={overview:['Assignment overview','Spring 2027 planning workspace'],courses:['Courses','Demand and section requirements'],tas:['Teaching assistants','Availability, preferences, and constraints'],assignments:['Assignments','Review the complete proposed plan'],constraints:['Constraints','Rules and optimization priorities']};
-function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));document.getElementById('viewTitle').textContent=titles[id][0];document.getElementById('viewSubtitle').textContent=titles[id][1];document.getElementById('sidebar').classList.remove('open');window.scrollTo({top:0,behavior:'smooth'})}
+const titles={overview:['Assignment overview','Spring 2027 planning workspace'],courses:['Courses','Demand and section requirements'],tas:['Teaching assistants','Availability, preferences, and constraints'],assignments:['Assignments','Review the complete proposed plan'],'scoring-test':['Scoring test','Run and inspect the preference model'],constraints:['Constraints','Rules and optimization priorities']};
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));document.getElementById('viewTitle').textContent=titles[id][0];document.getElementById('viewSubtitle').textContent=titles[id][1];document.getElementById('sidebar').classList.remove('open');if(window.location.hash!==`#${id}`)history.replaceState(null,'',`#${id}`);window.scrollTo({top:0,behavior:'smooth'})}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.go)));
 function toast(title,text){document.getElementById('toastTitle').textContent=title;document.getElementById('toastText').textContent=text;const el=document.getElementById('toast');el.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>el.classList.remove('show'),3200)}
 // Coordinator actions
@@ -46,6 +46,95 @@ document.getElementById('simulateBtn').addEventListener('click',()=>{document.ge
 document.getElementById('dismissDiff').addEventListener('click',()=>document.getElementById('diffBanner').classList.remove('show'));
 document.querySelectorAll('.resolveBtn').forEach(b=>b.addEventListener('click',()=>{showView('assignments');toast('Candidate options opened','The unstaffed lab is highlighted in the full plan.')}));
 document.getElementById('menuBtn').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+
+// Real preference-scoring test UI
+const testTopicWeight=document.getElementById('testTopicWeight');
+const testPreferenceWeight=document.getElementById('testPreferenceWeight');
+const testCourseSelect=document.getElementById('testCourseSelect');
+const testPeopleSoftReport=document.getElementById('testPeopleSoftReport');
+let scoringTestData=null;
+const escapeHtml=(value)=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+function syncTestWeights(changed){if(changed==='topic')testPreferenceWeight.value=100-Number(testTopicWeight.value);else testTopicWeight.value=100-Number(testPreferenceWeight.value);document.getElementById('testTopicOut').textContent=testTopicWeight.value;document.getElementById('testPreferenceOut').textContent=testPreferenceWeight.value}
+testTopicWeight.addEventListener('input',()=>syncTestWeights('topic'));
+testPreferenceWeight.addEventListener('input',()=>syncTestWeights('preference'));
+function renderTestRankings(){
+  if(!scoringTestData)return;
+  const course=testCourseSelect.value;
+  const rows=scoringTestData.rankings.filter(row=>row.course===course);
+  const eligibleCount=rows.filter(row=>row.eligible).length;
+  document.getElementById('testResultCaption').textContent=`${eligibleCount} eligible of ${rows.length} candidates for ${course}.`;
+  let eligibleRank=0;
+  document.getElementById('testRankingBody').innerHTML=rows.map(row=>{
+    const rank=row.eligible?++eligibleRank:'—';
+    const reason=row.disqualifiers?.join('; ')||'Eligible';
+    const score=row.overall_score==null?'—':row.overall_score.toFixed(1);
+    const topic=row.topic_fit==null?'—':`${row.topic_fit.toFixed(1)}%`;
+    return `<tr><td><strong>${rank}</strong></td><td><div class="person"><span class="avatar">${escapeHtml((row.name||'?').split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase())}</span><div><strong>${escapeHtml(row.name||'Unnamed candidate')}</strong><span>${escapeHtml(row.email||'No email')}</span></div></div></td><td><strong>${score}</strong></td><td>${topic}</td><td>${escapeHtml(row.preference||'Missing')}</td><td><span class="pill ${row.eligible?'good':'bad'}" title="${escapeHtml(reason)}">${row.eligible?'Eligible':'Excluded'}</span></td></tr>`;
+  }).join('')||'<tr><td colspan="6" class="empty">No candidates were returned for this course.</td></tr>';
+}
+function renderPeopleSoftSections(){
+  const peoplesoft=scoringTestData?.peoplesoft;
+  const body=document.getElementById('testSectionBody');
+  if(!peoplesoft){
+    document.getElementById('testSectionCaption').textContent='No readable PeopleSoft report was available for this run.';
+    body.innerHTML='<tr><td colspan="7" class="empty">Add a generated .xlsx report to scripts/PeopleSoft Scraper/reports and run again.</td></tr>';
+    return;
+  }
+  document.getElementById('testSectionCaption').textContent=`${peoplesoft.mapped_section_count} of ${peoplesoft.section_count} sections matched the current course map.`;
+  body.innerHTML=peoplesoft.sections.map(section=>{
+    const needs=[];
+    if(section.recitation_ta_need!==null&&section.recitation_ta_need!=='')needs.push(`Recitation ${section.recitation_ta_need}`);
+    if(section.grader_need!==null&&section.grader_need!=='')needs.push(`Grading ${section.grader_need}`);
+    const score=section.top_score==null?'—':section.top_score.toFixed(1);
+    return `<tr><td><div class="course"><span class="course-code">${escapeHtml(section.course_code.replace(/^\S+\s/,''))}</span><div><strong>${escapeHtml(section.course_code)}</strong><span>${escapeHtml(section.name||'Unnamed course')}</span></div></div></td><td>${escapeHtml(section.class_number||'—')}</td><td>${escapeHtml(section.component||'—')}</td><td>${section.enrollment??'—'}</td><td>${escapeHtml(needs.join(' · ')||'—')}</td><td>${escapeHtml(section.top_candidate||'Not mapped')}</td><td><strong>${score}</strong></td></tr>`;
+  }).join('')||'<tr><td colspan="7" class="empty">The selected report contains no course sections.</td></tr>';
+}
+testCourseSelect.addEventListener('change',renderTestRankings);
+document.getElementById('testRunBtn').addEventListener('click',async()=>{
+  const button=document.getElementById('testRunBtn');
+  const error=document.getElementById('testError');
+  button.disabled=true;
+  button.textContent='Running Python pipeline…';
+  error.textContent='';
+  document.getElementById('testRunStatus').textContent='Run in progress';
+  try{
+    const response=await fetch('/api/run-scoring',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic_weight:Number(testTopicWeight.value)/100,preference_weight:Number(testPreferenceWeight.value)/100,peoplesoft_report:testPeopleSoftReport.disabled?null:testPeopleSoftReport.value})});
+    const payload=await response.json();
+    if(!response.ok)throw new Error(payload.error||'The scoring run failed.');
+    scoringTestData=payload;
+    document.getElementById('testRunStatus').textContent=`Run #${payload.run_number} complete`;
+    document.getElementById('testProfiles').textContent=payload.profile_count;
+    document.getElementById('testCourses').textContent=payload.course_count;
+    document.getElementById('testRankings').textContent=payload.ranking_count;
+    document.getElementById('testTimestamp').textContent=`Completed ${new Date(payload.generated_at).toLocaleString()}`;
+    document.getElementById('testOutput').textContent=payload.outputs.rankings;
+    const previous=testCourseSelect.value;
+    testCourseSelect.innerHTML=payload.courses.map(item=>`<option value="${escapeHtml(item.course)}">${escapeHtml(item.course)} · ${item.eligible_count} eligible</option>`).join('');
+    testCourseSelect.disabled=false;
+    if(payload.courses.some(item=>item.course===previous))testCourseSelect.value=previous;
+    renderTestRankings();
+    renderPeopleSoftSections();
+    toast('Scoring test complete',`${payload.ranking_count} candidate-course rankings generated.`);
+  }catch(runError){
+    document.getElementById('testRunStatus').textContent='Run failed';
+    error.textContent=runError.message==='Failed to fetch'?'Start the Python testing UI server, then reload this page.':runError.message;
+  }finally{
+    button.disabled=false;
+    button.innerHTML='<svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg>Run scoring test';
+  }
+});
+fetch('/api/scoring-config').then(response=>response.ok?response.json():Promise.reject()).then(config=>{
+  document.getElementById('testWorkbook').textContent=config.workbook;
+  document.getElementById('testCourseMap').textContent=config.course_map;
+  if(config.peoplesoft_reports.length){
+    testPeopleSoftReport.innerHTML=config.peoplesoft_reports.map(path=>`<option value="${escapeHtml(path)}">${escapeHtml(path.split(/[\\/]/).pop())}</option>`).join('');
+    testPeopleSoftReport.disabled=false;
+    document.getElementById('testPeopleSoftNote').textContent='Read-only test input. The workbook will not be modified.';
+  }else{
+    document.getElementById('testPeopleSoftNote').textContent=config.peoplesoft_warning;
+  }
+}).catch(()=>{});
+const initialView=window.location.hash.slice(1);
+if(titles[initialView])showView(initialView);
 // Optional browser-agent integration
 if(document.modelContext?.registerTool){const lifecycle=new AbortController();const register=(tool)=>Promise.resolve(document.modelContext.registerTool(tool,{signal:lifecycle.signal})).catch(()=>{});register({name:'read_assignment_summary',title:'Read assignment summary',description:'Read the current TA assignment coverage, fit score, assigned hours, and unresolved issue count.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:false},execute:()=>({term:'Spring 2027',coverage:{staffed:13,total:14},preferenceFit:87,assignedHours:186,availableHours:200,unresolvedIssues:2})});register({name:'run_assignment',title:'Run assignment',description:'Run the visible TA assignment optimizer using the current constraints and update the proposal.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:async()=>{document.getElementById('runBtn').click();await new Promise(r=>setTimeout(r,1200));return{run:5,status:'complete',sectionsEvaluated:14,unresolvedIssues:2}}});register({name:'simulate_late_withdrawal',title:'Simulate late withdrawal',description:'Remove the sample TA Jordan Lee, replan the assignment, and show how many placements changed or stayed fixed.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:()=>{showView('constraints');document.getElementById('simulateBtn').click();return{removed:'Jordan Lee',placementsChanged:1,placementsPreserved:12,coveragePercent:93}}})}
-
