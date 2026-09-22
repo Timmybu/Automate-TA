@@ -1,0 +1,74 @@
+{
+  "Tue after 4 PM": {
+    "rules": [
+      {
+        "kind": "unavailable",
+        "days": [
+          "TUE"
+        ],
+        "start": "16:00",
+        "end": null
+      }
+    ],
+    "ambiguous": false,
+    "interpretation": "The TA is unavailable on Tuesdays from 16:00 (4:00 PM) until the end of the day."
+  },
+  "None": {
+    "rules": [],
+    "ambiguous": false,
+    "interpretation": "No scheduling constraints; the TA is available at any time."
+  },
+  "No Friday": {
+    "rules": [
+      {
+        "kind": "unavailable",
+        "days": [
+          "FRI"
+        ],
+        "start": null,
+        "end": null
+      }
+    ],
+    "ambiguous": false,
+    "interpretation": "The TA is unavailable all day on Fridays (cannot work any time on Friday)."
+  },
+  "Mon/Wed only": {
+    "rules": [
+      {
+        "kind": "available_only",
+        "days": [
+          "MON",
+          "WED"
+        ],
+        "start": null,
+        "end": null
+      }
+    ],
+    "ambiguous": false,
+    "interpretation": "The TA is available to work only on Mondays and Wednesdays and unavailable all other days."
+  },
+  "After 11 AM": {
+    "rules": [
+      {
+        "kind": "unavailable",
+        "days": [],
+        "start": "11:00",
+        "end": null
+      }
+    ],
+    "ambiguous": false,
+    "interpretation": "The TA is unavailable for any shift that starts at or after 11:00 on any day (i.e., they cannot work any time after 11:00)."
+  },
+  "No mornings": {
+    "rules": [
+      {
+        "kind": "unavailable",
+        "days": [],
+        "start": null,
+        "end": "12:00"
+      }
+    ],
+    "ambiguous": false,
+    "interpretation": "The TA is unavailable to work any time before 12:00 (morning) on every day."
+  }
+}
