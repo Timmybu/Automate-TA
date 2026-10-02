@@ -22,7 +22,7 @@
 <body>
   <header class="topbar">
     <div class="brand"><span class="mark">TA</span><span>Automate TA</span></div>
-    <p>CS 1980 Capstone · status: end of Week 3</p>
+    <p>CS 1980 Capstone · status: end of Week 5</p>
   </header>
 
   <main class="portfolio">
@@ -55,7 +55,7 @@
     <section class="row">
       <header class="row-label evolution-label"><b>04</b><div class="row-title"><strong>Project evolution</strong><span class="info" tabindex="0" aria-label="About the project evolution section">i<span class="tooltip" role="tooltip">Preserve each week’s plan, evidence, blocker, decision, next step, artifact, and architecture impact.</span></span></div></header>
       <div class="evolution-content">
-        <div class="evolution-head"><h2>12-week decision trail</h2><p>Weeks 1–3 recorded. Later weeks fill in at the end of each sprint.</p></div>
+        <div class="evolution-head"><h2>12-week decision trail</h2><p>Weeks 1–5 recorded. Later weeks fill in at the end of each sprint.</p></div>
         <div class="timeline" id="timeline" role="tablist" aria-label="Twelve-week project evolution"></div>
         <article class="week-pane" id="week-panel" role="tabpanel" aria-live="polite">
           <div class="week-story"><div class="week-kicker" id="week-kicker"></div><h3 id="week-title"></h3><p class="week-summary" id="week-summary"></p><div class="artifact"><span>WEEKLY ARTIFACT</span><strong id="week-artifact"></strong></div></div>
@@ -75,8 +75,8 @@
       {w:1,p:'Frame',s:'frame',t:'Find a problem with a real owner',sum:'Choose a capstone problem that someone already does by hand every term.',plan:'Form the team and pick a project with a stakeholder who feels the pain now.',ev:'TA section assignment surfaced as recurring manual work owned by one coordinator.',sig:'We had no written account of how assignments are made today.',dec:'Commit to automating TA assignment with a client.',next:'Meet the client and define the inputs, the scoring, and what “best” means.',art:'Project selection + team charter'},
       {w:2,p:'Frame',s:'frame',t:'Let the client define “best”',sum:'A first client meeting turns “assign TAs faster” into a scored, re-runnable assignment.',plan:'Meet Client, walk the current manual process end to end, and agree on an MVP.',ev:'Client confirmed he assigns sections by hand and that an application form already collects applicant answers.',sig:'The scoring factors beyond the form answers are still undecided, so we cannot fix the score yet.',dec:'Scope the MVP to an initial assignment run plus re-runs that only disturb the assignments with issues.',next:'Get a real form export and a section list, then draft the scoring factors with the client.',art:'Client meeting notes + MVP scope v1'},
       {w:3,p:'Frame',s:'frame',t:'Break the score into pieces we can build',sum:'Scoring becomes one score per applicant-section pair, split into hard constraints that disqualify and soft signals that only sway the ranking.',plan:'Segment the scoring inputs by workload and start with the easiest one, stated preference against topic competence.',ev:'Every submission pairs with every course, so the model needs a score for each pair; Client confirmed topic strength only comes up when a course is nobody’s first choice.',sig:'No blocker, but Client weighs things the form never asks, such as already knowing an applicant, so a score will never fully reproduce his picks.',dec:'Stand up a prototype application to host the system, and segment the scoring inputs by workload before writing any scoring code.',next:'Build the preference against competence score, then hand Client small sets of roughly five applicants and five courses to verify.',art:'Prototype application shell'},
-      pending(4,'Build','build'),
-      pending(5,'Build','build'),
+      {w:4,p:'Build',s:'build',t:'Make the free text machine-readable',sum:'Scheduling answers written as prose become structured rules, and the first real score starts ranking candidates course by course.',plan:'Get the free-text scheduling constraints into a usable form, since nothing can check a schedule while the answers are prose, and stand up the preference scoring pipeline that ranks candidates per course.',ev:'A GPT-5 mini deployment in Azure turned sample constraints into schema-valid rules; separately, the preference pipeline now ranks candidates per course from course-topic weights and stated preferences, with Cannot TA as a hard exclusion.',sig:'The student Azure credits expired, so the constraint parser lost the model it calls and never ran against the real form data.',dec:'Keep constraint parsing, preference scoring, and the PeopleSoft scraper as separate pieces, and re-run scoring from a testing tab instead of a one-shot script.',next:'Score more of the free text, starting with the open comments box, and look into school computing resources for model access. No assignment algorithm yet.',art:'Constraint parser + preference scoring pipeline'},
+      {w:5,p:'Build',s:'build',t:'Find a model we can keep',sum:'The search turns to permanent model access through the university, and the remaining scoring work is sequenced so it does not wait on that answer.',plan:'Research a permanent way to reach an AI model, now that the credits behind the constraint parser are gone.',ev:'School-hosted options were researched and the request for model access went to the mentor and Pitt IT; the reply is still outstanding.',sig:'Model access depends on a reply from the mentor and Pitt IT, so the constraint parser still has nothing to call.',dec:'Treat model access as an outside dependency and order the remaining scoring work so it can move before that question closes.',next:'Work the scoring items that need no model, and settle the hosting choice as soon as the mentor or Pitt IT answers.',art:'Model-access options + sequenced next steps'},
       pending(6,'Build','build'),
       pending(7,'Learn','learn'),
       pending(8,'Learn','learn'),
@@ -87,7 +87,7 @@
     ];
     const architecture={
       1:{input:'Form responses + section list',core:'Score, then assign',output:'Assignment list for the client',note:'Sketched in Week 2 and unchanged since: score each applicant against each section, assign, and feed the previous run back in so a re-run only moves what is broken. Week 3 adds a prototype shell for the experience layer; the core is still unbuilt.'},
-      2:{input:'—',core:'—',output:'—',note:'No snapshot yet. Record one when the system boundary changes.'},
+      2:{input:'Survey workbook + PeopleSoft sections',core:'Score and rank per course',output:'Testing tab with ranked candidates',note:'The boundary moved in Week 4: extraction and scoring run as their own scripts, separate from the PeopleSoft scraper, and a local testing tab re-runs them on demand. Free-text scheduling constraints parse to structured rules in a separate tool that is not wired into the ranking yet.'},
       3:{input:'—',core:'—',output:'—',note:'No snapshot yet. Record one when the system boundary changes.'},
       4:{input:'—',core:'—',output:'—',note:'No snapshot yet. Record one when the system boundary changes.'}
     };
@@ -103,7 +103,7 @@
       fields.forEach((field,index)=>document.getElementById(field).textContent=values[index]);
       document.getElementById('arch-version').textContent='v'+version;document.getElementById('arch-input').textContent=arch.input;document.getElementById('arch-core').textContent=arch.core;document.getElementById('arch-output').textContent=arch.output;document.getElementById('arch-note').textContent=arch.note;
     }
-    selectWeek(3);
+    selectWeek(5);
   </script>
 </body>
 </html>
