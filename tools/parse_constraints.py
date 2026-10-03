@@ -68,7 +68,6 @@ SYSTEM = """You convert a teaching assistant's free-text scheduling constraint i
 Rule kinds:
 - unavailable: the TA cannot work in this window.
 - available_only: the TA can work ONLY in these windows; all other times are unavailable.
-- prefer_not: the TA would rather not work in this window but could if needed.
 
 Conventions:
 - Days are MON..SUN. An empty days list means the rule applies to every day.
