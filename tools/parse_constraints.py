@@ -1,15 +1,25 @@
-"""Convert free-text TA scheduling constraints into structured rules.
+"""Stage 2: convert jsonified free-text constraints into weekly schedule rules.
 
-Calls an Azure OpenAI deployment with a strict JSON schema and caches the
-results in data/parsed_constraints.json, keyed by the original text, so each
-distinct constraint is only sent to Azure once.
+Reads the profiles JSON produced by stage 1
+(scripts/ta_preferences/extract_ta_preferences.py), sends each response's
+scheduling_constraints text to an Azure OpenAI deployment under a strict JSON
+schema, and writes weekly rules keyed by candidate_id. Only the constraint text
+is sent; names and emails stay local.
+
+Only recurring weekly availability is extracted. One-off dates, conditional
+plans, and anything else that is not a weekly rule are ignored by design.
 
 Usage:
-    python tools/parse_constraints.py                     # parse the sample constraints
-    python tools/parse_constraints.py "No Friday" "..."   # parse specific strings
-    python tools/parse_constraints.py --file input.txt    # one constraint per line
-    python tools/parse_constraints.py --force             # ignore the cache
+    python scripts/ta_preferences/extract_ta_preferences.py data/real_export.csv | python tools/parse_constraints.py --output data/weekly_constraints.json
+    python tools/parse_constraints.py data/ta_profiles.json --output data/weekly_constraints.json
+
+Also accepts the simpler {"records": [{"id", "text"}]} shape from
+tools/jsonify_constraints.py for constraint-only test fixtures.
+
+Progress goes to stderr, so stdout stays pipeable JSON.
 """
+
+from __future__ import annotations
 
 import argparse
 import json
@@ -17,15 +27,13 @@ import os
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 from openai import OpenAI
 
 ROOT = Path(__file__).resolve().parent.parent
-OUTPUT = ROOT / "data" / "parsed_constraints.json"
-
-# Constraints from the sample TA data in assets/app.js.
-SAMPLES = ["Tue after 4 PM", "None", "No Friday", "Mon/Wed only", "After 11 AM", "No mornings"]
+SCHEMA_VERSION = 1
 
 DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 TIME = {"type": ["string", "null"], "description": "24-hour HH:MM, or null for open-ended"}
@@ -35,7 +43,7 @@ TIME = {"type": ["string", "null"], "description": "24-hour HH:MM, or null for o
 SCHEMA = {
     "type": "object",
     "additionalProperties": False,
-    "required": ["rules", "ambiguous", "interpretation"],
+    "required": ["rules", "interpretation"],
     "properties": {
         "rules": {
             "type": "array",
@@ -51,58 +59,77 @@ SCHEMA = {
                 },
             },
         },
-        "ambiguous": {"type": "boolean"},
         "interpretation": {"type": "string"},
     },
 }
 
-SYSTEM = """You convert a teaching assistant's free-text scheduling constraint into rules.
+SYSTEM = """You convert a teaching assistant's free-text scheduling constraint into weekly rules.
 
 Rule kinds:
 - unavailable: the TA cannot work in this window.
-- available_only: the TA can work ONLY in these windows (all other times are unavailable).
+- available_only: the TA can work ONLY in these windows; all other times are unavailable.
 - prefer_not: the TA would rather not work in this window but could if needed.
 
 Conventions:
-- Days are MON..SUN. An empty days list means the rule applies every day.
+- Days are MON..SUN. An empty days list means the rule applies to every day.
 - Times are 24-hour HH:MM. start null = start of day, end null = end of day.
 - "Morning" = before 12:00. "Afternoon" = 12:00-17:00. "Evening" = after 17:00.
-- "None", blank, or "no constraints" -> rules is an empty list.
+- A response that lists class times, meetings, or other commitments describes
+  times the TA is busy, so use unavailable.
+- A response that lists working hours or free times describes availability, so
+  use available_only.
+- No constraints stated ("None", "N/A", "NA", "TBD", blank, "flexible") -> empty rules.
 
-If the text could reasonably mean two different things, choose the most likely
-reading AND set ambiguous to true. interpretation is one plain-English sentence
-stating exactly what the rules mean, so a person can verify it.
+Extract only recurring weekly availability. Ignore specific calendar dates,
+conference travel, conditional or possible future enrollment, and any other
+detail that does not repeat weekly. Never invent a rule that is not stated.
+
+interpretation is one plain-English sentence stating exactly what the rules
+mean, so a person can check them.
 
 Examples:
 "No Friday" -> [{"kind":"unavailable","days":["FRI"],"start":null,"end":null}]
 "Mon/Wed only" -> [{"kind":"available_only","days":["MON","WED"],"start":null,"end":null}]
-"No mornings" -> [{"kind":"unavailable","days":[],"start":null,"end":"12:00"}]"""
+"No mornings" -> [{"kind":"unavailable","days":[],"start":null,"end":"12:00"}]
+"Fri 12:30-1:30 CS 2003" -> [{"kind":"unavailable","days":["FRI"],"start":"12:30","end":"13:30"}]"""
 
 HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
 def make_client() -> OpenAI:
     load_dotenv(ROOT / ".env")
-    missing = [k for k in ("AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_KEY") if not os.getenv(k)]
+    missing = [key for key in ("AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_KEY") if not os.getenv(key)]
     if missing:
-        sys.exit(f"Missing {', '.join(missing)} in .env (see example.env).")
+        sys.exit(f"Missing {', '.join(missing)} in .env (see .env.example).")
     return OpenAI(
         base_url=os.environ["AZURE_OPENAI_ENDPOINT"].rstrip("/") + "/openai/v1/",
         api_key=os.environ["AZURE_OPENAI_KEY"],
     )
 
 
-def validate(result: dict) -> dict:
-    """Catch malformed times the schema can't express; flag them for review."""
-    for rule in result["rules"]:
+def load_entries(payload: dict[str, Any]) -> list[dict[str, str]]:
+    """Accept stage 1 records or extract_ta_preferences.py profiles."""
+
+    if "records" in payload:
+        return [{"id": r["id"], "text": r["text"]} for r in payload["records"]]
+    if "profiles" in payload:
+        return [
+            {"id": p["candidate_id"], "text": p.get("scheduling_constraints", "")}
+            for p in payload["profiles"]
+        ]
+    raise ValueError("Input JSON has neither 'records' (stage 1) nor 'profiles' keys")
+
+
+def check_times(entry_id: str, rules: list[dict[str, Any]]) -> None:
+    """Warn about malformed times; the schema cannot express the HH:MM format."""
+
+    for rule in rules:
         for key in ("start", "end"):
             if rule[key] is not None and not HHMM.match(rule[key]):
-                result["ambiguous"] = True
-                result["interpretation"] += f" [bad {key} time: {rule[key]!r}]"
-    return result
+                print(f"  warning: {entry_id} has a bad {key} time: {rule[key]!r}", file=sys.stderr)
 
 
-def parse(client: OpenAI, deployment: str, text: str) -> dict:
+def parse(client: OpenAI, deployment: str, text: str) -> dict[str, Any]:
     response = client.chat.completions.create(
         model=deployment,
         messages=[
@@ -111,7 +138,7 @@ def parse(client: OpenAI, deployment: str, text: str) -> dict:
         ],
         response_format={
             "type": "json_schema",
-            "json_schema": {"name": "constraint", "strict": True, "schema": SCHEMA},
+            "json_schema": {"name": "weekly_constraint", "strict": True, "schema": SCHEMA},
         },
         # GPT-5 models reject temperature; keep reasoning light for a simple extraction.
         reasoning_effort="low",
@@ -119,39 +146,49 @@ def parse(client: OpenAI, deployment: str, text: str) -> dict:
     message = response.choices[0].message
     if message.refusal:
         raise RuntimeError(f"Model refused: {message.refusal}")
-    return validate(json.loads(message.content))
+    return json.loads(message.content)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("texts", nargs="*", help="constraint strings to parse")
-    parser.add_argument("--file", type=Path, help="text file with one constraint per line")
-    parser.add_argument("--force", action="store_true", help="re-parse even if cached")
-    args = parser.parse_args()
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("input", nargs="?", type=Path, help="stage 1 JSON; omit to read stdin")
+    parser.add_argument("--output", type=Path, help="write here instead of stdout")
+    parser.add_argument("--limit", type=int, help="only process the first N entries")
+    args = parser.parse_args(argv)
 
-    texts = list(args.texts)
-    if args.file:
-        texts += [line.strip() for line in args.file.read_text(encoding="utf-8").splitlines() if line.strip()]
-    texts = list(dict.fromkeys(texts or SAMPLES))  # dedupe, keep order
+    raw = args.input.read_text(encoding="utf-8-sig") if args.input else sys.stdin.read()
+    # Piping between programs in Windows PowerShell prepends a BOM.
+    entries = load_entries(json.loads(raw.lstrip("﻿")))
+    if args.limit:
+        entries = entries[: args.limit]
 
-    cache = json.loads(OUTPUT.read_text(encoding="utf-8")) if OUTPUT.exists() else {}
     client = make_client()
     deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT", "constraint-parser")
 
-    for text in texts:
-        if text in cache and not args.force:
-            status = "cached"
-        else:
-            cache[text] = parse(client, deployment, text)
-            status = "parsed"
-        result = cache[text]
-        flag = "  [REVIEW]" if result["ambiguous"] else ""
-        print(f"{status:>6}  {text!r} -> {result['interpretation']}{flag}")
+    results: list[dict[str, Any]] = []
+    for index, entry in enumerate(entries, start=1):
+        print(f"[{index}/{len(entries)}] {entry['id']}", file=sys.stderr)
+        parsed = parse(client, deployment, entry["text"])
+        check_times(entry["id"], parsed["rules"])
+        results.append({**entry, **parsed})
 
-    OUTPUT.parent.mkdir(exist_ok=True)
-    OUTPUT.write_text(json.dumps(cache, indent=2) + "\n", encoding="utf-8")
-    print(f"\nWrote {len(cache)} entries to {OUTPUT.relative_to(ROOT)}")
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "deployment": deployment,
+        "entry_count": len(results),
+        "entries": results,
+    }
+    text = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(text, encoding="utf-8")
+        print(f"Wrote {len(results)} entries to {args.output}", file=sys.stderr)
+    else:
+        sys.stdout.write(text)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
